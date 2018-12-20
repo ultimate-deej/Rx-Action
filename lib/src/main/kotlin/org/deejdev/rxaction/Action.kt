@@ -6,20 +6,27 @@ import io.reactivex.functions.BiFunction
 import io.reactivex.subjects.BehaviorSubject
 import io.reactivex.subjects.PublishSubject
 
-class Action<Input, Output>(
-    isUserEnabled: Observable<Boolean>,
-    private val execute: (Input) -> Single<Output>
+class Action<Input, Output> private constructor(
+    private val execute: (Input) -> Single<Output>,
+    isUserEnabled: Observable<Boolean>?
 ) {
-    constructor(execute: (Input) -> Single<Output>) : this(Observable.just(true), execute)
+    constructor(execute: (Input) -> Single<Output>) : this(execute, null)
+    constructor(isUserEnabled: Observable<Boolean>, execute: (Input) -> Single<Output>) : this(execute, isUserEnabled)
 
     private val _values = PublishSubject.create<Output>()
     private val _errors = PublishSubject.create<Throwable>()
     private val _disabledErrors = PublishSubject.create<Any>()
     private val _isExecuting = BehaviorSubject.createDefault(false)
     private val _isEnabled = BehaviorSubject.create<Boolean>().also {
-        val combiner = BiFunction<Boolean, Boolean, Boolean> { userEnabled, executing -> userEnabled && !executing }
-        Observable.combineLatest(isUserEnabled, _isExecuting, combiner)
-            .subscribe(it)
+        if (isUserEnabled == null) {
+            _isExecuting
+                .map(Boolean::not)
+                .subscribe(it)
+        } else {
+            val combiner = BiFunction<Boolean, Boolean, Boolean> { userEnabled, executing -> userEnabled && !executing }
+            Observable.combineLatest(isUserEnabled, _isExecuting, combiner)
+                .subscribe(it)
+        }
     }
 
     val values: Observable<Output> = _values
