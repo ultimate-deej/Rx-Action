@@ -7,11 +7,16 @@ import io.reactivex.subjects.BehaviorSubject
 import io.reactivex.subjects.PublishSubject
 
 class Action<Input, Output> private constructor(
-    private val execute: (Input) -> Single<Output>,
-    isUserEnabled: Observable<Boolean>?
+    isUserEnabled: Observable<Boolean>?,
+    private val execute: (Input) -> Single<Output>
 ) {
-    constructor(execute: (Input) -> Single<Output>) : this(execute, null)
-    constructor(isUserEnabled: Observable<Boolean>, execute: (Input) -> Single<Output>) : this(execute, isUserEnabled)
+    companion object {
+        @JvmStatic
+        fun <Input, Output> fromSingle(isUserEnabled: Observable<Boolean>, execute: (Input) -> Single<Output>) = Action(isUserEnabled, execute)
+
+        @JvmStatic
+        fun <Input, Output> fromSingle(execute: (Input) -> Single<Output>) = Action(null, execute)
+    }
 
     private val _values = PublishSubject.create<Output>()
     private val _errors = PublishSubject.create<Throwable>()

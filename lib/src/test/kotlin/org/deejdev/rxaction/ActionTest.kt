@@ -16,7 +16,7 @@ class ActionTest {
             numberOfExecutions++
             it.onSuccess(Unit)
         }
-        val action = Action<Unit, Unit>(execute = { single })
+        val action = Action.fromSingle<Unit, Unit>(execute = { single })
 
         assertEquals("numberOfExecutions != 0", 0, numberOfExecutions)
         action()
@@ -32,7 +32,7 @@ class ActionTest {
             assertTrue(enabled.value!!)
             it.onSuccess(Unit)
         }
-        val action = Action<Unit, Unit>(enabled) { single }
+        val action = Action.fromSingle<Unit, Unit>(enabled) { single }
         val valuesObserver = action.values.test()
 
         enabled.onNext(false)
@@ -48,7 +48,7 @@ class ActionTest {
     @Test
     fun executionResultsForwardedToValues() {
         val result = Any()
-        val action = Action<Unit, Any> { Single.just(result) }
+        val action = Action.fromSingle<Unit, Any> { Single.just(result) }
         val valuesObserver = action.values.test()
 
         action()
@@ -58,7 +58,7 @@ class ActionTest {
     @Test
     fun executionErrorsForwardedToErrors() {
         val error = RuntimeException()
-        val action = Action<Unit, Any> { Single.error(error) }
+        val action = Action.fromSingle<Unit, Any> { Single.error(error) }
         val errorsObserver = action.errors.test()
 
         action()
@@ -68,7 +68,7 @@ class ActionTest {
     @Test
     fun executionErrorsDoNotEndValues() {
         val error = RuntimeException()
-        val action = Action<Unit, Any> { Single.error(error) }
+        val action = Action.fromSingle<Unit, Any> { Single.error(error) }
         val valuesObserver = action.values.test()
 
         action()
@@ -78,7 +78,7 @@ class ActionTest {
     @Test
     fun disabledActionOnlyEmitsDisabledErrors() {
         val enabled = Observable.just(false)
-        val action = Action<Unit, Any>(enabled) { Single.just(Unit) }
+        val action = Action.fromSingle<Unit, Any>(enabled) { Single.just(Unit) }
         val valuesObserver = action.values.test()
         val errorsObserver = action.errors.test()
         val disabledErrorsObserver = action.disabledErrors.test()
@@ -96,7 +96,7 @@ class ActionTest {
     fun isExecuting() {
         val single = Single.just(Unit)
             .delay(100, TimeUnit.MILLISECONDS)
-        val action = Action<Unit, Unit> { single }
+        val action = Action.fromSingle<Unit, Unit> { single }
 
         action.assertExecuting(false)
 
@@ -111,7 +111,7 @@ class ActionTest {
     fun disabledWhileExecuting() {
         val single = Single.just(Unit)
             .delay(100, TimeUnit.MILLISECONDS)
-        val action = Action<Unit, Unit> { single }
+        val action = Action.fromSingle<Unit, Unit> { single }
 
         action.assertEnabled(true)
 
@@ -126,7 +126,7 @@ class ActionTest {
     fun wontExecuteInParallel() {
         val single = Single.just(Unit)
             .delay(100, TimeUnit.MILLISECONDS)
-        val action = Action<Unit, Unit> { single }
+        val action = Action.fromSingle<Unit, Unit> { single }
         val valuesObserver = action.values.test()
         val disabledErrorsObserver = action.disabledErrors.test()
 
