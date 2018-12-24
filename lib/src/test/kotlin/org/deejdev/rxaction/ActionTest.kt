@@ -139,4 +139,14 @@ class ActionTest {
 
         valuesObserver.assertValueCount(1)
     }
+
+    @Test
+    fun multipleValuesPerExecution() {
+        val observable = Observable.just(3, 2, 1)
+        val action = Action.fromObservable<Unit, Int> { observable }
+        val valuesObserver = action.values.test()
+
+        action()
+        valuesObserver.assertValuesOnly(3, 2, 1)
+    }
 }

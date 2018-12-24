@@ -12,6 +12,14 @@ class Action<Input, Output> private constructor(
 ) {
     companion object {
         @JvmStatic
+        fun <Input, Output> fromObservable(isUserEnabled: Observable<Boolean>, execute: (Input) -> Observable<Output>): Action<Input, Output> =
+            Action(isUserEnabled, execute)
+
+        @JvmStatic
+        fun <Input, Output> fromObservable(execute: (Input) -> Observable<Output>): Action<Input, Output> =
+            Action(null, execute)
+
+        @JvmStatic
         fun <Input, Output> fromSingle(isUserEnabled: Observable<Boolean>, execute: (Input) -> Single<Output>): Action<Input, Output> =
             Action(isUserEnabled) { execute(it).toObservable() }
 
