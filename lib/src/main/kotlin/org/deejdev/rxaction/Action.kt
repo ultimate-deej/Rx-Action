@@ -8,14 +8,16 @@ import io.reactivex.subjects.PublishSubject
 
 class Action<Input, Output> private constructor(
     isUserEnabled: Observable<Boolean>?,
-    private val execute: (Input) -> Single<Output>
+    private val execute: (Input) -> Observable<Output>
 ) {
     companion object {
         @JvmStatic
-        fun <Input, Output> fromSingle(isUserEnabled: Observable<Boolean>, execute: (Input) -> Single<Output>) = Action(isUserEnabled, execute)
+        fun <Input, Output> fromSingle(isUserEnabled: Observable<Boolean>, execute: (Input) -> Single<Output>): Action<Input, Output> =
+            Action(isUserEnabled) { execute(it).toObservable() }
 
         @JvmStatic
-        fun <Input, Output> fromSingle(execute: (Input) -> Single<Output>) = Action(null, execute)
+        fun <Input, Output> fromSingle(execute: (Input) -> Single<Output>): Action<Input, Output> =
+            Action(null) { execute(it).toObservable() }
     }
 
     private val _values = PublishSubject.create<Output>()
