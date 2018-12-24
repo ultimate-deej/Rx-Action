@@ -19,9 +19,9 @@ class ActionTest {
         val action = Action<Unit, Unit>(execute = { single })
 
         assertEquals("numberOfExecutions != 0", 0, numberOfExecutions)
-        action(Unit)
+        action()
         assertEquals("numberOfExecutions != 1", 1, numberOfExecutions)
-        action(Unit)
+        action()
         assertEquals("numberOfExecutions != 2", 2, numberOfExecutions)
     }
 
@@ -36,11 +36,11 @@ class ActionTest {
         val valuesObserver = action.values.test()
 
         enabled.onNext(false)
-        action(Unit)
+        action()
         enabled.onNext(true)
-        action(Unit)
+        action()
         enabled.onNext(false)
-        action(Unit)
+        action()
 
         valuesObserver.assertValueCount(1)
     }
@@ -51,7 +51,7 @@ class ActionTest {
         val action = Action<Unit, Any> { Single.just(result) }
         val valuesObserver = action.values.test()
 
-        action(Unit)
+        action()
         valuesObserver.assertValuesOnly(result)
     }
 
@@ -61,7 +61,7 @@ class ActionTest {
         val action = Action<Unit, Any> { Single.error(error) }
         val errorsObserver = action.errors.test()
 
-        action(Unit)
+        action()
         errorsObserver.assertValuesOnly(error)
     }
 
@@ -71,7 +71,7 @@ class ActionTest {
         val action = Action<Unit, Any> { Single.error(error) }
         val valuesObserver = action.values.test()
 
-        action(Unit)
+        action()
         valuesObserver.assertNotTerminated()
     }
 
@@ -83,9 +83,9 @@ class ActionTest {
         val errorsObserver = action.errors.test()
         val disabledErrorsObserver = action.disabledErrors.test()
 
-        action(Unit)
+        action()
         disabledErrorsObserver.assertValueCount(1)
-        action(Unit)
+        action()
         disabledErrorsObserver.assertValueCount(2)
 
         valuesObserver.assertNoValues()
@@ -100,7 +100,7 @@ class ActionTest {
 
         action.assertExecuting(false)
 
-        action(Unit)
+        action()
         action.assertExecuting(true)
 
         action.values.test().awaitCount(1)
@@ -115,7 +115,7 @@ class ActionTest {
 
         action.assertEnabled(true)
 
-        action(Unit)
+        action()
         action.assertEnabled(false)
 
         action.values.test().awaitCount(1)
@@ -130,8 +130,8 @@ class ActionTest {
         val valuesObserver = action.values.test()
         val disabledErrorsObserver = action.disabledErrors.test()
 
-        action(Unit)
-        action(Unit)
+        action()
+        action()
         disabledErrorsObserver.assertValueCount(1)
         valuesObserver.assertValueCount(0)
 

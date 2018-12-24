@@ -47,3 +47,5 @@ class Action<Input, Output> private constructor(
             .subscribe(_values::onNext, _errors::onNext)
     }
 }
+
+operator fun <Output> Action<Unit, Output>.invoke() = invoke(Unit)
