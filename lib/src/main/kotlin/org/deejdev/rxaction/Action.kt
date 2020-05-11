@@ -39,7 +39,7 @@ class Action<Input, Output> private constructor(
                 .subscribe(it)
         } else {
             val combiner = BiFunction<Boolean, Boolean, Boolean> { userEnabled, executing -> userEnabled && !executing }
-            Observable.combineLatest(isUserEnabled, _isExecuting, combiner)
+            Observable.combineLatest(isUserEnabled.startWith(false), _isExecuting, combiner)
                 .subscribe(it)
         }
     }
