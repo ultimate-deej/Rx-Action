@@ -1,6 +1,7 @@
 package org.deejdev.rxaction
 
 import io.reactivex.Completable
+import io.reactivex.Flowable
 import io.reactivex.Observable
 import io.reactivex.Single
 import io.reactivex.functions.BiFunction
@@ -19,6 +20,14 @@ class Action<Input, Output> private constructor(
         @JvmStatic
         fun <Input, Output> fromObservable(execute: (Input) -> Observable<Output>): Action<Input, Output> =
             Action(null, execute)
+
+        @JvmStatic
+        fun <Input, Output> fromFlowable(isUserEnabled: Observable<Boolean>, execute: (Input) -> Flowable<Output>): Action<Input, Output> =
+            Action(isUserEnabled) { execute(it).toObservable() }
+
+        @JvmStatic
+        fun <Input, Output> fromFlowable(execute: (Input) -> Flowable<Output>): Action<Input, Output> =
+            Action(null) { execute(it).toObservable() }
 
         @JvmStatic
         fun <Input, Output> fromSingle(isUserEnabled: Observable<Boolean>, execute: (Input) -> Single<Output>): Action<Input, Output> =
