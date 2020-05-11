@@ -4,7 +4,6 @@ plugins {
 }
 
 group 'org.deejdev.rxaction'
-version '0.1'
 
 task sourcesJar(type: Jar) {
     from sourceSets.main.allSource
