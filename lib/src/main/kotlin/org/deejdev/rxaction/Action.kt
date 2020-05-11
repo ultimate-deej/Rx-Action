@@ -30,6 +30,7 @@ class Action<Input, Output> private constructor(
 
     private val _values = PublishSubject.create<Output>()
     private val _errors = PublishSubject.create<Throwable>()
+    private val _completions = PublishSubject.create<Any>()
     private val _disabledErrors = PublishSubject.create<Any>()
     private val _isExecuting = BehaviorSubject.createDefault(false)
     private val _isEnabled = BehaviorSubject.create<Boolean>().also {
@@ -46,6 +47,7 @@ class Action<Input, Output> private constructor(
 
     val values: Observable<Output> = _values
     val errors: Observable<Throwable> = _errors
+    val completions: Observable<Any> = _completions
     val disabledErrors: Observable<Any> = _disabledErrors
     val isExecuting: Observable<Boolean> = _isExecuting
     val isEnabled: Observable<Boolean> = _isEnabled
@@ -59,10 +61,11 @@ class Action<Input, Output> private constructor(
             return
         }
 
+        @Suppress("MoveLambdaOutsideParentheses")
         execute(input)
             .doOnSubscribe { _isExecuting.onNext(true) }
             .doFinally { _isExecuting.onNext(false) }
-            .subscribe(_values::onNext, _errors::onNext)
+            .subscribe(_values::onNext, _errors::onNext, { _completions.onNext(Unit) })
     }
 }
 
