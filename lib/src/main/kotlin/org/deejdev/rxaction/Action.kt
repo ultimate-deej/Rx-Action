@@ -50,6 +50,9 @@ class Action<Input, Output> private constructor(
     val isExecuting: Observable<Boolean> = _isExecuting
     val isEnabled: Observable<Boolean> = _isEnabled
 
+    val isExecutingValue: Boolean get() = _isExecuting.value!!
+    val isEnabledValue: Boolean get() = _isEnabled.value!!
+
     operator fun invoke(input: Input) {
         if (_isEnabled.value == false) {
             _disabledErrors.onNext(Unit)
