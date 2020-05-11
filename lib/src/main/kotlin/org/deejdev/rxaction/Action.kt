@@ -1,5 +1,6 @@
 package org.deejdev.rxaction
 
+import io.reactivex.Completable
 import io.reactivex.Observable
 import io.reactivex.Single
 import io.reactivex.functions.BiFunction
@@ -25,6 +26,14 @@ class Action<Input, Output> private constructor(
 
         @JvmStatic
         fun <Input, Output> fromSingle(execute: (Input) -> Single<Output>): Action<Input, Output> =
+            Action(null) { execute(it).toObservable() }
+
+        @JvmStatic
+        fun <Input> fromCompletable(isUserEnabled: Observable<Boolean>, execute: (Input) -> Completable): Action<Input, Nothing> =
+            Action(isUserEnabled) { execute(it).toObservable() }
+
+        @JvmStatic
+        fun <Input> fromCompletable(execute: (Input) -> Completable): Action<Input, Nothing> =
             Action(null) { execute(it).toObservable() }
     }
 
