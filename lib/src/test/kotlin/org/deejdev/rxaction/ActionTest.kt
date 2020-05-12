@@ -11,7 +11,7 @@ import java.util.concurrent.TimeUnit
 
 class ActionTest {
     @Test
-    fun executesExactlyOncePerInvocation() {
+    fun `executes exactly once per invocation`() {
         var numberOfExecutions = 0
         val completable = Completable.create {
             numberOfExecutions++
@@ -27,7 +27,7 @@ class ActionTest {
     }
 
     @Test
-    fun onlyExecutesWhenEnabled() {
+    fun `only executes when enabled`() {
         val enabled = BehaviorSubject.create<Boolean>()
         val single = Single.create<Unit> {
             assertTrue(enabled.value!!)
@@ -47,7 +47,7 @@ class ActionTest {
     }
 
     @Test
-    fun executionResultsForwardedToValues() {
+    fun `execution results forwarded to values`() {
         val result = Any()
         val action = Action.fromSingle<Unit, Any> { Single.just(result) }
         val valuesObserver = action.values.test()
@@ -57,7 +57,7 @@ class ActionTest {
     }
 
     @Test
-    fun executionErrorsForwardedToErrors() {
+    fun `execution errors forwarded to errors`() {
         val error = RuntimeException()
         val action = Action.fromSingle<Unit, Any> { Single.error(error) }
         val errorsObserver = action.errors.test()
@@ -67,7 +67,7 @@ class ActionTest {
     }
 
     @Test
-    fun executionErrorsDoNotEndValues() {
+    fun `execution errors do not terminate values`() {
         val error = RuntimeException()
         val action = Action.fromSingle<Unit, Any> { Single.error(error) }
         val valuesObserver = action.values.test()
@@ -77,7 +77,7 @@ class ActionTest {
     }
 
     @Test
-    fun disabledActionOnlyEmitsDisabledErrors() {
+    fun `disabled action only emits disabled errors`() {
         val enabled = Observable.just(false)
         val action = Action.fromSingle<Unit, Any>(enabled) { Single.just(Unit) }
         val valuesObserver = action.values.test()
@@ -109,7 +109,7 @@ class ActionTest {
     }
 
     @Test
-    fun disabledWhileExecuting() {
+    fun `disabled while executing`() {
         val completable = Completable.complete()
             .delay(100, TimeUnit.MILLISECONDS)
         val action = Action.fromCompletable<Unit> { completable }
@@ -124,7 +124,7 @@ class ActionTest {
     }
 
     @Test
-    fun wontExecuteInParallel() {
+    fun `won't execute in parallel`() {
         val completable = Completable.complete()
             .delay(100, TimeUnit.MILLISECONDS)
         val action = Action.fromCompletable<Unit> { completable }
@@ -142,7 +142,7 @@ class ActionTest {
     }
 
     @Test
-    fun multipleValuesPerExecution() {
+    fun `multiple values per execution`() {
         val observable = Observable.just(3, 2, 1)
         val action = Action.fromObservable<Unit, Int> { observable }
         val valuesObserver = action.values.test()
