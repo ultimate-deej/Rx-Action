@@ -103,7 +103,7 @@ class ActionTest {
         action()
         action.assertExecuting(true)
 
-        action.values.test().awaitCount(1)
+        action.values.test().awaitCount(1).assertValueCount(1)
         action.assertExecuting(false)
     }
 
@@ -118,7 +118,7 @@ class ActionTest {
         action()
         action.assertEnabled(false)
 
-        action.values.test().awaitCount(1)
+        action.values.test().awaitCount(1).assertValueCount(1)
         action.assertEnabled(true)
     }
 
