@@ -104,7 +104,7 @@ class ActionTest {
         action()
         assertEquals(true, action.isExecutingValue)
 
-        action.completions.test().awaitCount(1).assertValueCount(1)
+        action.completions.test().awaitCount(1)
         assertEquals(false, action.isExecutingValue)
     }
 
@@ -119,7 +119,7 @@ class ActionTest {
         action()
         assertEquals(false, action.isEnabledValue)
 
-        action.completions.test().awaitCount(1).assertValueCount(1)
+        action.completions.test().awaitCount(1)
         assertEquals(true, action.isEnabledValue)
     }
 
