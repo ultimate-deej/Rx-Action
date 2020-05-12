@@ -99,13 +99,13 @@ class ActionTest {
             .delay(100, TimeUnit.MILLISECONDS)
         val action = Action.fromCompletable<Unit> { completable }
 
-        action.assertExecuting(false)
+        assertEquals(false, action.isExecutingValue)
 
         action()
-        action.assertExecuting(true)
+        assertEquals(true, action.isExecutingValue)
 
         action.completions.test().awaitCount(1).assertValueCount(1)
-        action.assertExecuting(false)
+        assertEquals(false, action.isExecutingValue)
     }
 
     @Test
@@ -114,13 +114,13 @@ class ActionTest {
             .delay(100, TimeUnit.MILLISECONDS)
         val action = Action.fromCompletable<Unit> { completable }
 
-        action.assertEnabled(true)
+        assertEquals(true, action.isEnabledValue)
 
         action()
-        action.assertEnabled(false)
+        assertEquals(false, action.isEnabledValue)
 
         action.completions.test().awaitCount(1).assertValueCount(1)
-        action.assertEnabled(true)
+        assertEquals(true, action.isEnabledValue)
     }
 
     @Test
