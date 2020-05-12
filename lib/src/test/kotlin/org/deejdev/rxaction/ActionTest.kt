@@ -3,13 +3,22 @@ package org.deejdev.rxaction
 import io.reactivex.Completable
 import io.reactivex.Observable
 import io.reactivex.Single
+import io.reactivex.schedulers.TestScheduler
 import io.reactivex.subjects.BehaviorSubject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Test
 import java.util.concurrent.TimeUnit
 
 class ActionTest {
+    private lateinit var testScheduler: TestScheduler
+
+    @Before
+    fun initialize() {
+        testScheduler = TestScheduler()
+    }
+
     @Test
     fun `executes exactly once per invocation`() {
         var numberOfExecutions = 0
@@ -96,7 +105,7 @@ class ActionTest {
     @Test
     fun isExecuting() {
         val completable = Completable.complete()
-            .delay(100, TimeUnit.MILLISECONDS)
+            .delay(100, TimeUnit.MILLISECONDS, testScheduler)
         val action = Action.fromCompletable<Unit> { completable }
 
         assertEquals(false, action.isExecutingValue)
@@ -104,14 +113,14 @@ class ActionTest {
         action()
         assertEquals(true, action.isExecutingValue)
 
-        action.completions.test().awaitCount(1)
+        testScheduler.advanceTimeBy(100, TimeUnit.MILLISECONDS)
         assertEquals(false, action.isExecutingValue)
     }
 
     @Test
     fun `disabled while executing`() {
         val completable = Completable.complete()
-            .delay(100, TimeUnit.MILLISECONDS)
+            .delay(100, TimeUnit.MILLISECONDS, testScheduler)
         val action = Action.fromCompletable<Unit> { completable }
 
         assertEquals(true, action.isEnabledValue)
@@ -119,14 +128,14 @@ class ActionTest {
         action()
         assertEquals(false, action.isEnabledValue)
 
-        action.completions.test().awaitCount(1)
+        testScheduler.advanceTimeBy(100, TimeUnit.MILLISECONDS)
         assertEquals(true, action.isEnabledValue)
     }
 
     @Test
     fun `won't execute in parallel`() {
         val completable = Completable.complete()
-            .delay(100, TimeUnit.MILLISECONDS)
+            .delay(100, TimeUnit.MILLISECONDS, testScheduler)
         val action = Action.fromCompletable<Unit> { completable }
         val completionsObserver = action.completions.test()
         val disabledErrorsObserver = action.disabledErrors.test()
@@ -136,7 +145,7 @@ class ActionTest {
         disabledErrorsObserver.assertValueCount(1)
         completionsObserver.assertValueCount(0)
 
-        Thread.sleep(200)
+        testScheduler.advanceTimeBy(100, TimeUnit.MILLISECONDS)
 
         completionsObserver.assertValueCount(1)
     }
