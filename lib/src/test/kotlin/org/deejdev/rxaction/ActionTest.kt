@@ -1,5 +1,6 @@
 package org.deejdev.rxaction
 
+import io.reactivex.Completable
 import io.reactivex.Observable
 import io.reactivex.Single
 import io.reactivex.subjects.BehaviorSubject
@@ -12,11 +13,11 @@ class ActionTest {
     @Test
     fun executesExactlyOncePerInvocation() {
         var numberOfExecutions = 0
-        val single = Single.create<Unit> {
+        val completable = Completable.create {
             numberOfExecutions++
-            it.onSuccess(Unit)
+            it.onComplete()
         }
-        val action = Action.fromSingle<Unit, Unit>(execute = { single })
+        val action = Action.fromCompletable<Unit>(execute = { completable })
 
         assertEquals("numberOfExecutions != 0", 0, numberOfExecutions)
         action()
@@ -94,50 +95,50 @@ class ActionTest {
 
     @Test
     fun isExecuting() {
-        val single = Single.just(Unit)
+        val completable = Completable.complete()
             .delay(100, TimeUnit.MILLISECONDS)
-        val action = Action.fromSingle<Unit, Unit> { single }
+        val action = Action.fromCompletable<Unit> { completable }
 
         action.assertExecuting(false)
 
         action()
         action.assertExecuting(true)
 
-        action.values.test().awaitCount(1).assertValueCount(1)
+        action.completions.test().awaitCount(1).assertValueCount(1)
         action.assertExecuting(false)
     }
 
     @Test
     fun disabledWhileExecuting() {
-        val single = Single.just(Unit)
+        val completable = Completable.complete()
             .delay(100, TimeUnit.MILLISECONDS)
-        val action = Action.fromSingle<Unit, Unit> { single }
+        val action = Action.fromCompletable<Unit> { completable }
 
         action.assertEnabled(true)
 
         action()
         action.assertEnabled(false)
 
-        action.values.test().awaitCount(1).assertValueCount(1)
+        action.completions.test().awaitCount(1).assertValueCount(1)
         action.assertEnabled(true)
     }
 
     @Test
     fun wontExecuteInParallel() {
-        val single = Single.just(Unit)
+        val completable = Completable.complete()
             .delay(100, TimeUnit.MILLISECONDS)
-        val action = Action.fromSingle<Unit, Unit> { single }
-        val valuesObserver = action.values.test()
+        val action = Action.fromCompletable<Unit> { completable }
+        val completionsObserver = action.completions.test()
         val disabledErrorsObserver = action.disabledErrors.test()
 
         action()
         action()
         disabledErrorsObserver.assertValueCount(1)
-        valuesObserver.assertValueCount(0)
+        completionsObserver.assertValueCount(0)
 
         Thread.sleep(200)
 
-        valuesObserver.assertValueCount(1)
+        completionsObserver.assertValueCount(1)
     }
 
     @Test
