@@ -1,2 +1,1 @@
 include ':lib'
-project(":lib").name = "rx-action"
