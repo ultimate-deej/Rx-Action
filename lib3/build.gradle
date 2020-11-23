@@ -1,0 +1,67 @@
+plugins {
+    id 'org.jetbrains.kotlin.jvm' version '1.4.10'
+    id 'maven-publish'
+    id 'signing'
+}
+
+task sourcesJar(type: Jar) {
+    from sourceSets.main.allSource
+    archiveClassifier.set('sources')
+}
+
+dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-stdlib"
+    api "io.reactivex.rxjava3:rxjava:3.0.7"
+
+    testImplementation group: 'junit', name: 'junit', version: '4.13'
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+            artifact sourcesJar
+            artifactId 'rx-action'
+            groupId 'org.deejdev.rxaction3'
+            version '0.2.1'
+
+            pom {
+                name.set("Rx-Action")
+                description.set("Abstract actions for RxJava 3, inspired by and loosely based on ReactiveCocoa's Action")
+                url.set("https://github.com/ultimate-deej/Rx-Action")
+                licenses {
+                    license {
+                        name.set("MIT License")
+                        url.set("https://opensource.org/licenses/MIT")
+                    }
+                }
+                developers {
+                    developer {
+                        id.set("ultimate-deej")
+                        name.set("Maxim Naumov")
+                        email.set("ultimate.deej@gmail.com")
+                    }
+                }
+                scm {
+                    connection.set("scm:git:https://github.com/ultimate-deej/Rx-Action.git")
+                    developerConnection.set("scm:git:https://github.com/ultimate-deej/Rx-Action.git")
+                    url.set("https://github.com/ultimate-deej/Rx-Action")
+                }
+            }
+        }
+    }
+    repositories {
+        maven {
+            url "https://oss.sonatype.org/service/local/staging/deploy/maven2"
+            credentials {
+                username sonatypeUser
+                password sonatypePassword
+            }
+        }
+    }
+}
+
+signing {
+    useGpgCmd()
+    sign publishing.publications.mavenJava
+}
