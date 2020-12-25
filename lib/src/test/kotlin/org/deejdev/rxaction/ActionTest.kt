@@ -3,13 +3,17 @@ package org.deejdev.rxaction
 import io.reactivex.Completable
 import io.reactivex.Observable
 import io.reactivex.Single
+import io.reactivex.schedulers.Schedulers
 import io.reactivex.schedulers.TestScheduler
 import io.reactivex.subjects.BehaviorSubject
+import io.reactivex.subjects.PublishSubject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 
 class ActionTest {
     private lateinit var testScheduler: TestScheduler
@@ -158,5 +162,97 @@ class ActionTest {
 
         action()
         valuesObserver.assertValuesOnly(3, 2, 1)
+    }
+
+    // TODO: This test and the one after it do their job, but are far from good
+    @Test
+    fun `results are delivered on specified scheduler`() {
+        val singleSchedulerThreadId = getSingleSchedulerThreadId()
+
+        // 1 value, 1 completion, 3 isExecuting, 3 isEnabled
+        val resultsLatch = CountDownLatch(8)
+        val countDown = {
+            if (Thread.currentThread().id == singleSchedulerThreadId) {
+                resultsLatch.countDown()
+            }
+        }
+
+        val singleCalledOnAnotherThread = AtomicBoolean(false)
+
+        val single: Single<Unit> = Single.just(Unit)
+            .doOnSuccess {
+                if (Thread.currentThread().id != singleSchedulerThreadId) {
+                    singleCalledOnAnotherThread.set(true)
+                }
+            }
+            .subscribeOn(Schedulers.newThread())
+
+        val action: Action<Unit, Unit> = Action.fromSingle(Schedulers.single()) {
+            single
+        }
+
+        action.values.subscribe { countDown() }
+        action.completions.subscribe { countDown() }
+        // Called 3 times:
+        // 1. false initially
+        // 3. true during execution
+        // 4. false after execution
+        action.isExecuting.subscribe { countDown() }
+        // Called 3 times reflecting isExecuting state
+        action.isEnabled.subscribe { countDown() }
+
+        // Run
+        action()
+
+        // Is 1 second enough? Doesn't seem reliable but works for the time being.
+        assertTrue(resultsLatch.await(1, TimeUnit.SECONDS))
+        assertTrue(singleCalledOnAnotherThread.get())
+    }
+
+    @Test
+    fun `errors are delivered on specified scheduler`() {
+        val singleSchedulerThreadId = getSingleSchedulerThreadId()
+
+        val resultsLatch = CountDownLatch(2)
+        val countDown = {
+            if (Thread.currentThread().id == singleSchedulerThreadId) {
+                resultsLatch.countDown()
+            }
+        }
+
+        val singleCalledOnAnotherThread = AtomicBoolean(false)
+
+        val single: Single<Unit> = Single.error<Unit>(RuntimeException())
+            .doOnError {
+                if (Thread.currentThread().id != singleSchedulerThreadId) {
+                    singleCalledOnAnotherThread.set(true)
+                }
+            }
+            .subscribeOn(Schedulers.newThread())
+        val isUserEnabled = PublishSubject.create<Boolean>()
+
+        val action: Action<Unit, Unit> = Action.fromSingle(Schedulers.single(), isUserEnabled) {
+            single
+        }
+
+        action.errors.subscribe { countDown() }
+        action.disabledErrors.subscribe { countDown() }
+
+        // Trigger disabledErrors
+        action()
+
+        // Proceed with normal execution
+        isUserEnabled.onNext(true)
+        action()
+
+        // Is 1 second enough? Doesn't seem reliable but works for the time being.
+        assertTrue(resultsLatch.await(1, TimeUnit.SECONDS))
+        assertTrue(singleCalledOnAnotherThread.get())
+    }
+
+    private fun getSingleSchedulerThreadId(): Long {
+        return Single.fromCallable { Thread.currentThread().id }
+            .subscribeOn(Schedulers.single())
+            .blockingGet()
     }
 }

@@ -1,49 +1,79 @@
 package org.deejdev.rxaction3
 
-import io.reactivex.rxjava3.core.Completable
-import io.reactivex.rxjava3.core.Flowable
-import io.reactivex.rxjava3.core.Observable
-import io.reactivex.rxjava3.core.Single
+import io.reactivex.rxjava3.core.*
 import io.reactivex.rxjava3.functions.BiFunction
 import io.reactivex.rxjava3.subjects.BehaviorSubject
 import io.reactivex.rxjava3.subjects.PublishSubject
 
 class Action<Input, Output> private constructor(
+    private val scheduler: Scheduler?,
     isUserEnabled: Observable<Boolean>?,
     private val execute: (Input) -> Observable<Output>
 ) {
     companion object {
         @JvmStatic
         fun <Input, Output> fromObservable(isUserEnabled: Observable<Boolean>, execute: (Input) -> Observable<Output>): Action<Input, Output> =
-            Action(isUserEnabled, execute)
+            Action(null, isUserEnabled, execute)
 
         @JvmStatic
         fun <Input, Output> fromObservable(execute: (Input) -> Observable<Output>): Action<Input, Output> =
-            Action(null, execute)
+            Action(null, null, execute)
+
+        @JvmStatic
+        fun <Input, Output> fromObservable(scheduler: Scheduler?, isUserEnabled: Observable<Boolean>, execute: (Input) -> Observable<Output>): Action<Input, Output> =
+            Action(scheduler, isUserEnabled, execute)
+
+        @JvmStatic
+        fun <Input, Output> fromObservable(scheduler: Scheduler?, execute: (Input) -> Observable<Output>): Action<Input, Output> =
+            Action(scheduler, null, execute)
 
         @JvmStatic
         fun <Input, Output> fromFlowable(isUserEnabled: Observable<Boolean>, execute: (Input) -> Flowable<Output>): Action<Input, Output> =
-            Action(isUserEnabled) { execute(it).toObservable() }
+            Action(null, isUserEnabled) { execute(it).toObservable() }
 
         @JvmStatic
         fun <Input, Output> fromFlowable(execute: (Input) -> Flowable<Output>): Action<Input, Output> =
-            Action(null) { execute(it).toObservable() }
+            Action(null, null) { execute(it).toObservable() }
+
+        @JvmStatic
+        fun <Input, Output> fromFlowable(scheduler: Scheduler?, isUserEnabled: Observable<Boolean>, execute: (Input) -> Flowable<Output>): Action<Input, Output> =
+            Action(scheduler, isUserEnabled) { execute(it).toObservable() }
+
+        @JvmStatic
+        fun <Input, Output> fromFlowable(scheduler: Scheduler?, execute: (Input) -> Flowable<Output>): Action<Input, Output> =
+            Action(scheduler, null) { execute(it).toObservable() }
 
         @JvmStatic
         fun <Input, Output> fromSingle(isUserEnabled: Observable<Boolean>, execute: (Input) -> Single<Output>): Action<Input, Output> =
-            Action(isUserEnabled) { execute(it).toObservable() }
+            Action(null, isUserEnabled) { execute(it).toObservable() }
 
         @JvmStatic
         fun <Input, Output> fromSingle(execute: (Input) -> Single<Output>): Action<Input, Output> =
-            Action(null) { execute(it).toObservable() }
+            Action(null, null) { execute(it).toObservable() }
+
+        @JvmStatic
+        fun <Input, Output> fromSingle(scheduler: Scheduler?, isUserEnabled: Observable<Boolean>, execute: (Input) -> Single<Output>): Action<Input, Output> =
+            Action(scheduler, isUserEnabled) { execute(it).toObservable() }
+
+        @JvmStatic
+        fun <Input, Output> fromSingle(scheduler: Scheduler?, execute: (Input) -> Single<Output>): Action<Input, Output> =
+            Action(scheduler, null) { execute(it).toObservable() }
 
         @JvmStatic
         fun <Input> fromCompletable(isUserEnabled: Observable<Boolean>, execute: (Input) -> Completable): Action<Input, Nothing> =
-            Action(isUserEnabled) { execute(it).toObservable() }
+            Action(null, isUserEnabled) { execute(it).toObservable() }
 
         @JvmStatic
         fun <Input> fromCompletable(execute: (Input) -> Completable): Action<Input, Nothing> =
-            Action(null) { execute(it).toObservable() }
+            Action(null, null) { execute(it).toObservable() }
+
+        @JvmStatic
+        fun <Input> fromCompletable(scheduler: Scheduler?, isUserEnabled: Observable<Boolean>, execute: (Input) -> Completable): Action<Input, Nothing> =
+            Action(scheduler, isUserEnabled) { execute(it).toObservable() }
+
+        @JvmStatic
+        fun <Input> fromCompletable(scheduler: Scheduler?, execute: (Input) -> Completable): Action<Input, Nothing> =
+            Action(scheduler, null) { execute(it).toObservable() }
     }
 
     private val _values = PublishSubject.create<Output>()
@@ -67,8 +97,11 @@ class Action<Input, Output> private constructor(
     val errors: Observable<Throwable> = _errors
     val completions: Observable<Any> = _completions
     val disabledErrors: Observable<Any> = _disabledErrors
+        .run { scheduler?.let(::observeOn) ?: this }
     val isExecuting: Observable<Boolean> = _isExecuting
+        .run { scheduler?.let(::observeOn) ?: this }
     val isEnabled: Observable<Boolean> = _isEnabled
+        .run { scheduler?.let(::observeOn) ?: this }
 
     val isExecutingValue: Boolean get() = _isExecuting.value!!
     val isEnabledValue: Boolean get() = _isEnabled.value!!
@@ -81,6 +114,7 @@ class Action<Input, Output> private constructor(
 
         @Suppress("MoveLambdaOutsideParentheses")
         execute(input)
+            .run { scheduler?.let(::observeOn) ?: this }
             .doOnSubscribe { _isExecuting.onNext(true) }
             .doFinally { _isExecuting.onNext(false) }
             .subscribe(_values::onNext, _errors::onNext, { _completions.onNext(Unit) })
